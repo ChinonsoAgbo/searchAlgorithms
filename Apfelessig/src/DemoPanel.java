@@ -359,7 +359,7 @@ final int ALGORITHM = BELLMANNFORD;
 
             startIndex = astarItem.getNodeIndex();
             node = nodes.get(startIndex);
-            System.out.println(node.getData()); // ??
+            System.out.println(node.getData());
 
             astar_table[startIndex].dist = -astar_table[startIndex].dist;
 
@@ -432,19 +432,6 @@ final int ALGORITHM = BELLMANNFORD;
         return Math.abs(currentTile.col - goalFloorTile.col) + Math.abs(currentTile.row - goalFloorTile.row);
     }
 
-//    private void searchBellmannFord() {
-//        // first the generateGraph method is called
-//        generateGraph();
-//        //TODO: implement a method find the optimal path using Bellmann and Ford's algorithm
-//        //TODO: this method will be executed by pressing the enter key
-//        //TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
-//        //TODO: and all nodes on the optimal path green using the setAsPath() method
-//        //TODO: use an array of BSFItems to save the optimal path
-//        //TODO: print the accumulated path length in the console
-//        //TODO: once the algorithm reached the goal tile you can stop the loop using the goalReached variable
-//        //TODO: in case there's no solution you can stop the loop by using the maxSteps variable
-//    }
-
 
     private void searchBellmannFord() {
         // first the generateGraph method is called
@@ -454,10 +441,6 @@ final int ALGORITHM = BELLMANNFORD;
         BFSItem[] bellmanFordTable = new BFSItem[nodes.size()];
 
         int i;
-        int initCapacity = 150;
-        Graph.AdjacencyElemLessComparator comp = new Graph.AdjacencyElemLessComparator();
-        PriorityQueue<AdjElement> queue = new PriorityQueue<>(initCapacity, comp);
-
         // initialize all nodes
         for (i = 0; i < nodes.size(); i++) {
             // unprocessed nodes are set to the maximum integer value and their predecessor is set to null
@@ -466,7 +449,7 @@ final int ALGORITHM = BELLMANNFORD;
 
         int start_id = graph.getNodeID(startFloorTile.col + "/" + startFloorTile.row);
         // Starting the search from a given start_id. The bellmanFordTable contains the result
-        searchBellmanFordAlgorithm(start_id, bellmanFordTable, queue);
+        searchBellmanFordAlgorithm(start_id, bellmanFordTable);
 
         // TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
         // TODO: and all nodes on the optimal path green using the setAsPath() method
@@ -477,57 +460,79 @@ final int ALGORITHM = BELLMANNFORD;
     }
 
 
-    private void searchBellmanFordAlgorithm(int start, BFSItem[] bellmanFordTable, PriorityQueue<AdjElement> queue) {
+
+    private void searchBellmanFordAlgorithm(int index, BFSItem[] bellmanFordTable) {
         List<Node> nodes = graph.getNodes();
-        int weight = 0;
-        int goalIndex = graph.getNodeID(goalFloorTile.col + "/" + goalFloorTile.row);
+        int startIndex;
+        int weight;
+        Node node;
+        ArrayList<AdjElement> adjL;
+        AdjElement adjE;
+        boolean changed;
+        String goalKey = "";
 
-        // Set the distance of the start node to 0
-        bellmanFordTable[start].dist = 0;
+        // Initialize distances and predecessors
+        for (int i = 0; i < nodes.size(); i++) {
+            bellmanFordTable[i].dist = Integer.MAX_VALUE;
+            bellmanFordTable[i].pred = null;
+        }
 
-        // Add the start node to the priority queue
-        queue.add(new AdjElement(start, 0));
+        // Set the distance of the starting node to 0
+        bellmanFordTable[index].dist = 0;
 
-        while (!queue.isEmpty()) {
-            // Poll the node with the smallest distance from the queue
-            AdjElement currentElement = queue.poll();
-            int currentIndex = currentElement.getNodeIndex();
-            Node currentNode = nodes.get(currentIndex);
+        // Relaxation step for |V| - 1 iterations
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                node = nodes.get(j);
+                startIndex = graph.getNodeID(node.getKey());
+                adjL = node.getAdjacencies();
+                Iterator<AdjElement> iter = adjL.iterator();
 
-            // Mark visited nodes in orange
-            currentFloorTile = (FloorTile) currentNode.getData();
-            currentFloorTile.setAsVisited();
+                while (iter.hasNext()) {
+                    adjE = iter.next();
+                    int subIndex = adjE.getNodeIndex();
+                    weight = adjE.getWeight();
 
-            // Check if the goal is reached
-            if (currentIndex == goalIndex) {
-                goalReached = true;
-                break;
-            }
-
-            // Relax edges
-            ArrayList<AdjElement> adjList = currentNode.getAdjacencies();
-            for (AdjElement adjElement : adjList) {
-                int neighborIndex = adjElement.getNodeIndex();
-                weight = adjElement.getWeight();
-
-                // Relaxation step
-                if (bellmanFordTable[currentIndex].dist != Integer.MAX_VALUE &&
-                        bellmanFordTable[currentIndex].dist + weight < bellmanFordTable[neighborIndex].dist) {
-                    bellmanFordTable[neighborIndex].dist = bellmanFordTable[currentIndex].dist + weight;
-                    bellmanFordTable[neighborIndex].pred = currentNode.getKey();
-
-                    // Add the neighbor to the queue
-                    queue.add(new AdjElement(neighborIndex, bellmanFordTable[neighborIndex].dist));
+                    if (bellmanFordTable[startIndex].dist != Integer.MAX_VALUE &&
+                            bellmanFordTable[startIndex].dist + weight < bellmanFordTable[subIndex].dist) {
+                        bellmanFordTable[subIndex].dist = bellmanFordTable[startIndex].dist + weight;
+                        bellmanFordTable[subIndex].pred = node.getKey();
+                    }
                 }
             }
         }
 
-        // Mark optimal path in green
+        // Check for negative cycles after |V| - 1 iterations
+        for (int j = 0; j < nodes.size(); j++) {
+            node = nodes.get(j);
+            startIndex = graph.getNodeID(node.getKey());
+            adjL = node.getAdjacencies();
+            Iterator<AdjElement> iter = adjL.iterator();
+
+            while (iter.hasNext()) {
+                adjE = iter.next();
+                int subIndex = adjE.getNodeIndex();
+                weight = adjE.getWeight();
+
+                if (bellmanFordTable[startIndex].dist != Integer.MAX_VALUE &&
+                        bellmanFordTable[startIndex].dist + weight < bellmanFordTable[subIndex].dist) {
+                    System.out.println("Graph contains a negative cycle.");
+                }
+            }
+        }
+
+        // Mark visited nodes and set optimal path
         currentFloorTile = goalFloorTile;
         while (!currentFloorTile.equals(startFloorTile)) {
             currentFloorTile.setAsPath();
-            int currentIndex = graph.getNodeID(bellmanFordTable[graph.getNodeID(currentFloorTile.col + "/" + currentFloorTile.row)].pred);
-            currentFloorTile = (FloorTile) nodes.get(currentIndex).getData();
+            int currentIndex = getIndex(bellmanFordTable, goalKey);
+            if (currentIndex == -1) {
+                return;
+            }
+            BFSItem currentItem = bellmanFordTable[currentIndex];
+            goalKey = currentItem.pred;
+            currentFloorTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
         }
     }
+
 }
