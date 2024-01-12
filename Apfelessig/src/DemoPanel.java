@@ -21,9 +21,10 @@ public class DemoPanel extends JPanel {
     final int DIJKSTRA = 0;
     final int ASTAR = 1;
     final int BELLMANNFORD = 2;
+    //    final int ALGORITHM = DIJKSTRA;
 //    final int ALGORITHM = ASTAR;
-//    final int ALGORITHM = DIJKSTRA;
-final int ALGORITHM = BELLMANNFORD;
+
+    final int ALGORITHM = BELLMANNFORD;
 
 
     public DemoPanel() {
@@ -73,6 +74,12 @@ final int ALGORITHM = BELLMANNFORD;
         setCoinTile(9, 1);
     }
 
+    /**
+     * Sets the start tile at the specified column and row.
+     *
+     * @param col The column of the start tile.
+     * @param row The row of the start tile.
+     */
     private void setStartTile(int col, int row) {
         floorTile[col][row].setAsStart();
         startFloorTile = floorTile[col][row];
@@ -96,6 +103,9 @@ final int ALGORITHM = BELLMANNFORD;
         floorTile[col][row].setAsCoin();
     }
 
+    /**
+     * Searches for the optimal path based on the selected algorithm.
+     */
     public void search() {
         if (ALGORITHM == DIJKSTRA) {
             searchDijkstra();
@@ -106,6 +116,9 @@ final int ALGORITHM = BELLMANNFORD;
         }
     }
 
+    /**
+     * Generates a graph based on the current floor tiles and adds nodes and edges accordingly.
+     */
     private void generateGraph() {
         graph = new Graph();
         for (int col = 0; col < maxCol; col++) {
@@ -153,8 +166,20 @@ final int ALGORITHM = BELLMANNFORD;
         }
     }
 
+    /**
+     * Searches for the optimal path using Dijkstra's algorithm.
+     */
+    //TODO: implement a method find the optimal path" using Dijkstra's algorithm
+    //TODO: this method will be executed by pressing the enter key
+    //TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
+    //TODO: and all nodes on the optimal path green using the setAsPath() method
+    //TODO: use an array of BSFItems to save the optimal path
+    //TODO: print the accumulated path length in the console
+    //TODO: once the algorithm reached the goal tile you can stop the loop using the goalReached variable
+    //TODO: in case there's no solution you can stop the loop by using the maxSteps variable
+    // first the generateGraph method is called
     private void searchDijkstra() {
-        // first the generateGraph method is called
+
         generateGraph();
         List<Node> nodes = graph.getNodes();
         // using BreadthFirstSearch Items for Dijkstra's Algorithm as well as above
@@ -164,7 +189,7 @@ final int ALGORITHM = BELLMANNFORD;
         int initCapacity = 150;
         // For Dijkstra's algorithm, the element with the lowest current weight needs to be selected.
         // A PriorityQueue always sorts itself such that the next element to be polled is the smallest
-        // in Order to achieve that, the PriorityQueue needs a Comparator to sort elements accordingly
+        // To achieve that, the PriorityQueue needs a Comparator to sort elements accordingly
         Graph.AdjacencyElemLessComparator comp = new Graph.AdjacencyElemLessComparator();
         PriorityQueue<AdjElement> queue = new PriorityQueue<>(initCapacity, comp);
 
@@ -177,16 +202,16 @@ final int ALGORITHM = BELLMANNFORD;
         // Starting the search from a given start_id. The bfsi_table contains the result,
         // and queue is the priority queue
         searchMinimalSpanningTree(start_id, bfsi_table, queue);
-        //TODO: implement a method find the optimal path" using Dijkstra's algorithm
-        //TODO: this method will be executed by pressing the enter key
-        //TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
-        //TODO: and all nodes on the optimal path green using the setAsPath() method
-        //TODO: use an array of BSFItems to save the optimal path
-        //TODO: print the accumulated path length in the console
-        //TODO: once the algorithm reached the goal tile you can stop the loop using the goalReached variable
-        //TODO: in case there's no solution you can stop the loop by using the maxSteps variable
+
     }
 
+    /**
+     * Performs a breadth-first search to find the minimal spanning tree starting from the given index in the graph.
+     *
+     * @param index      The index of the starting node in the graph.
+     * @param bfsi_table An array of BFSItem objects representing the state of each node during the search.
+     * @param queue      PriorityQueue of AdjElement objects to manage the order of exploration.
+     */
     private void searchMinimalSpanningTree(int index,
                                            BFSItem[] bfsi_table,
                                            PriorityQueue<AdjElement> queue) {
@@ -256,15 +281,22 @@ final int ALGORITHM = BELLMANNFORD;
         while (!currentFloorTile.equals(startFloorTile)) {
             currentFloorTile.setAsPath();
             int currentIndex = getIndex(bfsi_table, goalKey);
-            if(currentIndex == -1){
+            if (currentIndex == -1) {
                 return;
             }
             BFSItem currentItem = bfsi_table[currentIndex];
             goalKey = currentItem.pred;
-           currentFloorTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
+            currentFloorTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
         }
     }
 
+    /**
+     * Adds or updates an AdjElement in the PriorityQueue based on its node index and weight.
+     *
+     * @param queue The PriorityQueue<AdjElement> to add/update the element in.
+     * @param e     The AdjElement to be added or updated in the PriorityQueue.
+     * @return True if the element has been added or updated, false otherwise.
+     */
     private boolean addPQueueElement(PriorityQueue<AdjElement> queue, AdjElement e) {
         boolean found = false;
         boolean add = true;
@@ -290,18 +322,33 @@ final int ALGORITHM = BELLMANNFORD;
         return (add);
     }
 
+    /**
+     * Finds the index of a BFSItem with a given node label in the provided array.
+     * @param items The array of BFSItem objects to search.
+     * @param label The node label to search for.
+     * @return The index of the BFSItem with the specified label if found; otherwise, returns -1.
+     */
     private int getIndex(BFSItem[] items, String label) {
         for (int i = 0; i < items.length; i++) {
             if (items[i].node_label.equals(label)) {
                 return i;
             }
         }
+//        System.out.println("Label not found: " + label);
+
         return -1;
     }
 
+    /**
+     * Executes the A* search algorithm to find the optimal path in the graph.
+     * The A* algorithm is initiated from the starting node and iteratively explores nodes
+     * based on their heuristic value and the accumulated cost.
+     * Once the goal is reached or the maximum steps are reached, the algorithm stops.
+     * Visited nodes are marked orange, and nodes on the optimal path are marked green.
+     * The optimal path length is printed in the console.
+     * Pressing the enter key triggers the execution of this method.
+     */
     private void searchAStar() {
-        // first the generateGraph method is called
-        generateGraph();
         //TODO: implement a method find the optimal path using the A* algorithm
         //TODO: this method will be executed by pressing the enter key
         //TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
@@ -310,26 +357,39 @@ final int ALGORITHM = BELLMANNFORD;
         //TODO: print the accumulated path length in the console
         //TODO: once the algorithm reached the goal tile you can stop the loop using the goalReached variable
         //TODO: in case there's no solution you can stop the loop by using the maxSteps variable
+        // first the generateGraph method is called
+
+        // first, the generateGraph method is called
+
+        generateGraph();
 
         List<Node> nodes = graph.getNodes();
 
+        // Initialization of A* table and priority queue
         BFSItem[] astar_table = new BFSItem[nodes.size()];
 
         int i;
         int initCapacity = 150;
         Graph.AdjacencyElemLessComparator comp = new Graph.AdjacencyElemLessComparator();
-        PriorityQueue<AdjElement> queue = new PriorityQueue<>(initCapacity,comp);
+        PriorityQueue<AdjElement> queue = new PriorityQueue<>(initCapacity, comp);
 
         for (i = 0; i < nodes.size(); i++) {
             astar_table[i] = new BFSItem(-Integer.MAX_VALUE, null, nodes.get(i).getKey());
         }
-
+        // Starting node ID obtained from the graph based on the starting floor tile
         int start_id = graph.getNodeID(startFloorTile.col + "/" + startFloorTile.row);
+        // Execute A* algorithm
         searchAStarAlgorithm(start_id, astar_table, queue);
-
 
     }
 
+    /**
+     * Executes the A* search algorithm from a given index in the graph to find the optimal path.
+     *
+     * @param index       The index of the starting node in the graph.
+     * @param astar_table An array of BFSItem objects representing the state of each node during the search.
+     * @param queue       PriorityQueue of AdjElement objects to manage the order of exploration.
+     */
     private void searchAStarAlgorithm(int index, BFSItem[] astar_table, PriorityQueue<AdjElement> queue) {
         List<Node> nodes = graph.getNodes();
         int startIndex = 0;
@@ -402,15 +462,28 @@ final int ALGORITHM = BELLMANNFORD;
             currentFloorTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
         }
     }
+
+    /**
+     * Adds or updates an AdjElement in the PriorityQueue based on its node index and weight for A* algorithm.
+     *
+     * @param queue The PriorityQueue<AdjElement> to add/update the element in.
+     * @param e     The AdjElement to be added or updated in the PriorityQueue.
+     * @return True if the element has been added or updated, false otherwise.
+     */
     private boolean addAStarQueueElement(PriorityQueue<AdjElement> queue, AdjElement e) {
         boolean found = false;
         boolean add = true;
 
+        // Iterate through the PriorityQueue to find the element with the same node index
         Iterator<AdjElement> iter = queue.iterator();
         while (iter.hasNext() && !found) {
             AdjElement myE = iter.next();
             if (myE.getNodeIndex() == e.getNodeIndex()) {
                 found = true;
+
+                // If the existing element has a greater weight, remove it
+                // Otherwise, do not add the new element
+
                 if (myE.getWeight() > e.getWeight()) {
                     queue.remove(myE);
                 } else {
@@ -418,13 +491,20 @@ final int ALGORITHM = BELLMANNFORD;
                 }
             }
         }
+        // If the element is not found or has a lower weight, add the new element to the PriorityQueue
 
         if (add) {
             queue.add(e);
         }
         return add;
     }
-
+    /**
+     * Calculates the heuristic value (estimated cost) from the given node to the goal node.
+     * The heuristic used is the Manhattan distance between the current node and the goal node.
+     *
+     * @param node The node for which the heuristic value is calculated.
+     * @return The calculated heuristic value representing the estimated cost to reach the goal.
+     */
     private int calculateHeuristic(Node node) {
 
         // This is where the estimated cost from the current node to the goal is calculated
@@ -432,11 +512,26 @@ final int ALGORITHM = BELLMANNFORD;
         return Math.abs(currentTile.col - goalFloorTile.col) + Math.abs(currentTile.row - goalFloorTile.row);
     }
 
-
+    /**
+     * Executes the Bellman-Ford algorithm to find the optimal path in the graph.
+     * The Bellman-Ford algorithm is initiated from the starting node and iteratively relaxes
+     * the edges until the shortest paths are found or a negative cycle is detected.
+     * Visited nodes are marked orange, and nodes on the optimal path are marked green.
+     * The optimal path length is printed in the console.
+     * The algorithm stops when the goal is reached or the maximum steps are reached.
+     * Pressing the enter key triggers the execution of this method.
+     */
     private void searchBellmannFord() {
+        // TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
+        // TODO: and all nodes on the optimal path green using the setAsPath() method
+        // TODO: use an array of BFSItems to save the optimal path
+        // TODO: print the accumulated path length in the console
+        // TODO: once the algorithm reached the goal tile you can stop the loop using the goalReached variable
+        // TODO: in case there's no solution you can stop the loop by using the maxSteps variable
         // first the generateGraph method is called
         generateGraph();
         List<Node> nodes = graph.getNodes();
+
         // using Bellman-Ford Items
         BFSItem[] bellmanFordTable = new BFSItem[nodes.size()];
 
@@ -451,24 +546,25 @@ final int ALGORITHM = BELLMANNFORD;
         // Starting the search from a given start_id. The bellmanFordTable contains the result
         searchBellmanFordAlgorithm(start_id, bellmanFordTable);
 
-        // TODO: mark all visited nodes in the dungeon map orange using the setAsVisited() method
-        // TODO: and all nodes on the optimal path green using the setAsPath() method
-        // TODO: use an array of BFSItems to save the optimal path
-        // TODO: print the accumulated path length in the console
-        // TODO: once the algorithm reached the goal tile you can stop the loop using the goalReached variable
-        // TODO: in case there's no solution you can stop the loop by using the maxSteps variable
+
     }
 
 
+    /**
+     * Performs the Bellman-Ford algorithm to find the shortest paths from a given starting node to all other nodes in the graph.
+     *
+     * @param index            The index of the starting node in the graph.
+     * @param bellmanFordTable An array of BFSItem representing the table used in the Bellman-Ford algorithm to store distances and predecessors.
+     */
 
     private void searchBellmanFordAlgorithm(int index, BFSItem[] bellmanFordTable) {
+        // Retrieve the list of nodes from the graph
         List<Node> nodes = graph.getNodes();
         int startIndex;
         int weight;
         Node node;
         ArrayList<AdjElement> adjL;
         AdjElement adjE;
-        boolean changed;
         String goalKey = "";
 
         // Initialize distances and predecessors
@@ -493,46 +589,83 @@ final int ALGORITHM = BELLMANNFORD;
                     int subIndex = adjE.getNodeIndex();
                     weight = adjE.getWeight();
 
+//                    if (bellmanFordTable[startIndex].dist != Integer.MAX_VALUE &&
+//                            bellmanFordTable[startIndex].dist - weight < bellmanFordTable[subIndex].dist) {
+//                        bellmanFordTable[subIndex].dist = bellmanFordTable[startIndex].dist - weight;
+//                        bellmanFordTable[subIndex].pred = node.getKey();
+//                        goalKey = node.getKey();
+//                        // Mark the node as visited (setAsVisited) in your FloorTile class
+//                        FloorTile visitedTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
+//                        visitedTile.setAsVisited();
+
                     if (bellmanFordTable[startIndex].dist != Integer.MAX_VALUE &&
                             bellmanFordTable[startIndex].dist + weight < bellmanFordTable[subIndex].dist) {
                         bellmanFordTable[subIndex].dist = bellmanFordTable[startIndex].dist + weight;
                         bellmanFordTable[subIndex].pred = node.getKey();
+                        goalKey = node.getKey();
+
+                        // Mark the node as visited (setAsVisited) in your FloorTile class
+                        FloorTile visitedTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
+                        visitedTile.setAsVisited();
+                        System.out.println(node.getData());
+
                     }
                 }
             }
         }
 
-        // Check for negative cycles after |V| - 1 iterations
-        for (int j = 0; j < nodes.size(); j++) {
-            node = nodes.get(j);
+        // Check for negative cycles
+        for (Node value : nodes) {
+            node = value;
             startIndex = graph.getNodeID(node.getKey());
             adjL = node.getAdjacencies();
-            Iterator<AdjElement> iter = adjL.iterator();
 
-            while (iter.hasNext()) {
-                adjE = iter.next();
+            for (AdjElement adjElement : adjL) {
+                adjE = adjElement;
                 int subIndex = adjE.getNodeIndex();
                 weight = adjE.getWeight();
 
                 if (bellmanFordTable[startIndex].dist != Integer.MAX_VALUE &&
                         bellmanFordTable[startIndex].dist + weight < bellmanFordTable[subIndex].dist) {
-                    System.out.println("Graph contains a negative cycle.");
+                    System.out.println("Negative cycle detected involving nodes: " + node.getKey() + " and " + nodes.get(subIndex).getKey());
+                    return; // Exit the method if a negative cycle is detected
                 }
             }
         }
 
-        // Mark visited nodes and set optimal path
+         // Backtrack through the optimal path
         currentFloorTile = goalFloorTile;
-        while (!currentFloorTile.equals(startFloorTile)) {
+        while (currentFloorTile != null && !currentFloorTile.equals(startFloorTile)) {
             currentFloorTile.setAsPath();
             int currentIndex = getIndex(bellmanFordTable, goalKey);
             if (currentIndex == -1) {
+                System.out.println("Error: Unable to find current index in bellmanFordTable.");
                 return;
             }
             BFSItem currentItem = bellmanFordTable[currentIndex];
+
+            if (currentItem == null) {
+                System.out.println("Error: Null current item during backtracking.");
+                return;
+            }
+
             goalKey = currentItem.pred;
-            currentFloorTile = (FloorTile) nodes.get(graph.getNodeID(goalKey)).getData();
+
+            // Mark the node as part of the optimal path
+            if (goalKey != null) {
+                int nodeID = graph.getNodeID(goalKey);
+                if (nodeID != -1) {
+                    currentFloorTile = (FloorTile) nodes.get(nodeID).getData();
+                    currentFloorTile.setAsPath();
+                } else {
+                    System.out.println("Error: Unable to find nodeID for goalKey: " + goalKey);
+                    return;
+                }
+            } else {
+                System.out.println("Error: Null goalKey during backtracking.");
+                return;
+            }
         }
     }
-
 }
+
